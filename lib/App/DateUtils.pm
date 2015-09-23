@@ -9,6 +9,33 @@ use warnings;
 
 our %SPEC;
 
+my %time_zone_arg = (
+    time_zone => {
+        schema => 'str*',
+        cmdline_aliases => {timezone=>{}},
+    },
+);
+
+my %dates_arg = (
+    dates => {
+        schema => ['array*', of=>'str*', min_len=>1],
+        'x.name.is_plural' => 1,
+        req => 1,
+        pos => 0,
+        greedy => 1,
+    },
+);
+
+my %durations_arg = (
+    durations => {
+        schema => ['array*', of=>'str*', min_len=>1],
+        'x.name.is_plural' => 1,
+        req => 1,
+        pos => 0,
+        greedy => 1,
+    },
+);
+
 $SPEC{parse_date} = {
     v => 1.1,
     summary => 'Parse date string(s) using one of several modules',
@@ -22,18 +49,14 @@ $SPEC{parse_date} = {
             default => 'DateTime::Format::Natural',
             cmdline_aliases => {m=>{}},
         },
-        time_zone => {
-            schema => 'str*',
-            cmdline_aliases => {timezone=>{}},
-        },
-        dates => {
-            schema => ['array*', of=>'str*', min_len=>1],
-            'x.name.is_plural' => 1,
-            req => 1,
-            pos => 0,
-            greedy => 1,
-        },
+        %time_zone_arg,
+        %dates_arg,
     },
+    examples => [
+        {
+            argv => ['23 sep 2015','tomorrow','foo'],
+        },
+    ],
 };
 sub parse_date {
     my %args = @_;
@@ -78,6 +101,19 @@ sub parse_date {
     [200, "OK", \@res];
 }
 
+$SPEC{parse_date_using_df_natural} = {
+    v => 1.1,
+    summary => 'Parse date string(s) using DateTime::Format::Natural',
+    args => {
+        %time_zone_arg,
+        %dates_arg,
+    },
+};
+sub parse_date_using_df_natural {
+    my %args = @_;
+    parse_date(module=>'DateTime::Format::Natural', %args);
+}
+
 $SPEC{parse_duration} = {
     v => 1.1,
     summary => 'Parse duration string(s) using one of several modules',
@@ -90,13 +126,7 @@ $SPEC{parse_duration} = {
             default => 'Time::Duration::Parse',
             cmdline_aliases => {m=>{}},
         },
-        durations => {
-            schema => ['array*', of=>'str*', min_len=>1],
-            'x.name.is_plural' => 1,
-            req => 1,
-            pos => 0,
-            greedy => 1,
-        },
+        %durations_arg,
     },
 };
 sub parse_duration {
@@ -140,6 +170,18 @@ sub parse_duration {
         push @res, $rec;
     }
     [200, "OK", \@res];
+}
+
+$SPEC{parse_duration_using_df_duration} = {
+    v => 1.1,
+    summary => 'Parse date string(s) using DateTime::Format::Duration',
+    args => {
+        %durations_arg,
+    },
+};
+sub parse_duration_using_df_duration {
+    my %args = @_;
+    parse_duration(module=>'DateTime::Format::Duration', %args);
 }
 
 1;
