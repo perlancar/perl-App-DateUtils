@@ -1,5 +1,13 @@
 Revision history for App-DateUtils
 
+0.02    2015-09-23 (PERLANCAR)
+
+	- [dist] Autogenerate scripts.
+
+	- Add two convenient CLI scripts: parse-date-using-df-natural,
+          parse-duration-using-df-duration.
+
+
 0.01    2015-09-23 (PERLANCAR)
 
         - First release.
