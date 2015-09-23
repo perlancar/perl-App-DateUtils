@@ -1,0 +1,103 @@
+#!perl
+
+# DATE
+# VERSION
+
+use 5.010;
+use strict;
+use warnings;
+
+use Perinci::CmdLine::Any;
+
+our %SPEC;
+
+$SPEC{parse_duration} = {
+    v => 1.1,
+    summary => 'Parse duration string(s) using one of several modules',
+    args => {
+        module => {
+            schema  => ['str*', in=>[
+                'DateTime::Format::Duration',
+                'Time::Duration::Parse',
+            ]],
+            default => 'Time::Duration::Parse',
+            cmdline_aliases => {m=>{}},
+        },
+        durations => {
+            schema => ['array*', of=>'str*', min_len=>1],
+            'x.name.is_plural' => 1,
+            req => 1,
+            pos => 0,
+            greedy => 1,
+        },
+    },
+};
+sub parse_duration {
+    my %args = @_;
+
+    my $mod = $args{module};
+
+    my $parser;
+    if ($mod eq 'DateTime::Format::Duration') {
+        require DateTime::Format::Duration;
+        $parser = DateTime::Format::Duration->new(
+        );
+    } elsif ($mod eq 'Time::Duration::Parse') {
+        require Time::Duration::Parse;
+    }
+
+    my @res;
+    for my $dur (@{ $args{durations} }) {
+        my $rec = { original => $dur };
+        if ($mod eq 'DateTime::Format::Duration') {
+            my $dtdur = $parser->parse_duration($dur);
+            if ($dtdur) {
+                $rec->{is_parseable} = 1;
+                $rec->{as_dtdur_obj} = "$dtdur";
+                $rec->{as_secs} = $dtdur->in_units('seconds');
+            } else {
+                $rec->{is_parseable} = 0;
+            }
+        } elsif ($mod eq 'Time::Duration::Parse') {
+            my $secs;
+            eval { $secs = Time::Duration::Parse::parse_duration($dur) };
+            if ($@) {
+                $rec->{is_parseable} = 0;
+                $rec->{error_msg} = $@;
+                $rec->{error_msg} =~ s/\n+/ /g;
+            } else {
+                $rec->{is_parseable} = 1;
+                $rec->{as_secs} = $secs;
+            }
+        }
+        push @res, $rec;
+    }
+    [200, "OK", \@res];
+}
+
+Perinci::CmdLine::Any->new(
+    url => "/main/parse_duration",
+)->run;
+
+# ABSTRACT:
+# PODNAME:
+
+=head1 SYNOPSIS
+
+ % parse-duration '23s' 'foo'
+ +---------+-------------------------------------------------------+--------------+----------+
+ | as_secs | error_msg                                             | is_parseable | original |
+ +---------+-------------------------------------------------------+--------------+----------+
+ | 23      |                                                       | 1            | 23s      |
+ |         | Unknown timespec: foo at bin/parse-duration line 63.  | 0            | foo      |
+ +---------+-------------------------------------------------------+--------------+----------+
+
+
+=head1 DESCRIPTION
+
+
+=head1 SEE ALSO
+
+L<parse-date>
+
+=cut
