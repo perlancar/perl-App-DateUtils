@@ -9,79 +9,8 @@ use warnings;
 
 use Perinci::CmdLine::Any;
 
-our %SPEC;
-
-$SPEC{parse_date} = {
-    v => 1.1,
-    summary => 'Parse date string(s) using one of several modules',
-    args => {
-        module => {
-            schema  => ['str*', in=>[
-                'DateTime::Format::Alami::EN',
-                'DateTime::Format::Alami::ID',
-                'DateTime::Format::Natural',
-            ]],
-            default => 'DateTime::Format::Natural',
-            cmdline_aliases => {m=>{}},
-        },
-        time_zone => {
-            schema => 'str*',
-            cmdline_aliases => {timezone=>{}},
-        },
-        dates => {
-            schema => ['array*', of=>'str*', min_len=>1],
-            'x.name.is_plural' => 1,
-            req => 1,
-            pos => 0,
-            greedy => 1,
-        },
-    },
-};
-sub parse_date {
-    my %args = @_;
-
-    my $mod = $args{module};
-
-    my $parser;
-    if ($mod eq 'DateTime::Format::Alami::EN') {
-        require DateTime::Format::Alami::EN;
-        $parser = DateTime::Format::Alami::EN->new(
-            ( time_zone => $args{time_zone} ) x !!(defined($args{time_zone})),
-        );
-    } elsif ($mod eq 'DateTime::Format::Alami::ID') {
-        require DateTime::Format::Alami::ID;
-        $parser = DateTime::Format::Alami::ID->new(
-            ( time_zone => $args{time_zone} ) x !!(defined($args{time_zone})),
-        );
-    } elsif ($mod eq 'DateTime::Format::Natural') {
-        require DateTime::Format::Natural;
-        $parser = DateTime::Format::Natural->new(
-            ( time_zone => $args{time_zone} ) x !!(defined($args{time_zone})),
-        );
-    }
-
-    my @res;
-    for my $date (@{ $args{dates} }) {
-        my $rec = { original => $date };
-        if ($mod =~ /^DateTime::Format::(Alami|Natural)/) {
-            my $dt = $parser->parse_datetime($date);
-            my $success = $mod =~ /Alami/ ? $dt : $parser->success;
-
-            if ($success) {
-                $rec->{is_parseable} = 1;
-                $rec->{as_epoch} = $dt->epoch;
-                $rec->{as_datetime_obj} = "$dt";
-            } else {
-                $rec->{is_parseable} = 0;
-            }
-        }
-        push @res, $rec;
-    }
-    [200, "OK", \@res];
-}
-
 Perinci::CmdLine::Any->new(
-    url => "/main/parse_date",
+    url => "/App/DateUtils/parse_date",
 )->run;
 
 # ABSTRACT:
