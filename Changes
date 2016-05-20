@@ -1,5 +1,10 @@
 Revision history for App-DateUtils
 
+0.04    2016-05-20 (PERLANCAR)
+
+	- Add scripts: dateconv, durconv.
+
+
 0.03    2016-01-18 (PERLANCAR)
 
         - No functional changes.
