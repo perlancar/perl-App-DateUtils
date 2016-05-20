@@ -184,6 +184,113 @@ sub parse_duration_using_df_duration {
     parse_duration(module=>'DateTime::Format::Duration', %args);
 }
 
+$SPEC{dateconv} = {
+    v => 1.1,
+    summary => 'Convert date to another format',
+    args => {
+        date => {
+            schema => ['date*', {
+                'x.perl.coerce_to' => 'DateTime',
+                'x.perl.coerce_from' => ['str_alami'],
+            }],
+            req => 1,
+            pos => 0,
+        },
+        to => {
+            schema => ['str*', in=>[qw/epoch ymd/]], # XXX: iso8601, ...
+            default => 'epoch',
+        },
+    },
+    result_naked => 1,
+    examples => [
+        {
+            summary => 'Convert "today" to epoch',
+            args => {date => 'today'},
+            test => 0,
+        },
+        {
+            summary => 'Convert epoch to ymd',
+            args => {date => '1463702400', to=>'ymd'},
+            result => '2016-05-20',
+        },
+    ],
+};
+sub dateconv {
+    my %args = @_;
+    my $date = $args{date};
+    my $to   = $args{to};
+
+    if ($to eq 'epoch') {
+        return $date->epoch;
+    } elsif ($to eq 'ymd') {
+        return $date->ymd;
+    } else {
+        die "Unknown format '$to'";
+    }
+}
+
+$SPEC{durconv} = {
+    v => 1.1,
+    summary => 'Convert duration to another format',
+    args => {
+        duration => {
+            schema => ['duration*', {
+                'x.perl.coerce_to' => 'DateTime::Duration',
+            }],
+            req => 1,
+            pos => 0,
+        },
+        to => {
+            schema => ['str*', in=>[qw/secs hash/]], # XXX: iso8601, ...
+            default => 'secs',
+        },
+    },
+    result_naked => 1,
+    examples => [
+        {
+            summary => 'Convert "3h2m" to number of seconds',
+            args => {duration => '3h2m'},
+            result => 10920,
+        },
+    ],
+};
+sub durconv {
+    my %args = @_;
+    my $dur = $args{duration};
+    my $to  = $args{to};
+
+    if ($to eq 'secs') {
+        # approximation
+        return (
+            $dur->years       * 365*86400 +
+            $dur->months      *  30*86400 +
+            $dur->weeks       *   7*86400 +
+            $dur->days        *     86400 +
+            $dur->hours       *      3600 +
+            $dur->minutes     *        60 +
+            $dur->seconds     *         1 +
+            $dur->nanoseconds *      1e-9
+        );
+    } elsif ($to eq 'hash') {
+        my $h = {
+            years => $dur->years,
+            months => $dur->months,
+            weeks => $dur->weeks,
+            days => $dur->days,
+            hours => $dur->hours,
+            minutes => $dur->minutes,
+            seconds => $dur->seconds,
+            nanoseconds => $dur->nanoseconds,
+        };
+        for (keys %$h) {
+            delete $h->{$_} if $h->{$_} == 0;
+        }
+        return $h;
+    } else {
+        die "Unknown format '$to'";
+    }
+}
+
 1;
 # ABSTRACT: An assortment of date-/time-related CLI utilities
 
