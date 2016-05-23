@@ -191,7 +191,7 @@ $SPEC{dateconv} = {
         date => {
             schema => ['date*', {
                 'x.perl.coerce_to' => 'DateTime',
-                'x.perl.coerce_from' => ['str_alami'],
+                'x.perl.coerce_rules' => ['str_alami'],
             }],
             req => 1,
             pos => 0,
