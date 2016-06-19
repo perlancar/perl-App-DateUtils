@@ -79,6 +79,8 @@ sub parse_date {
         $parser = DateTime::Format::Natural->new(
             ( time_zone => $args{time_zone} ) x !!(defined($args{time_zone})),
         );
+    } else {
+        return [400, "Unknown module '$mod'"];
     }
 
     my @res;
@@ -112,6 +114,32 @@ $SPEC{parse_date_using_df_natural} = {
 sub parse_date_using_df_natural {
     my %args = @_;
     parse_date(module=>'DateTime::Format::Natural', %args);
+}
+
+$SPEC{parse_date_using_df_alami_en} = {
+    v => 1.1,
+    summary => 'Parse date string(s) using DateTime::Format::Alami::EN',
+    args => {
+        %time_zone_arg,
+        %dates_arg,
+    },
+};
+sub parse_date_using_df_alami_en {
+    my %args = @_;
+    parse_date(module=>'DateTime::Format::Alami::EN', %args);
+}
+
+$SPEC{parse_date_using_df_alami_id} = {
+    v => 1.1,
+    summary => 'Parse date string(s) using DateTime::Format::Alami::ID',
+    args => {
+        %time_zone_arg,
+        %dates_arg,
+    },
+};
+sub parse_date_using_df_alami_id {
+    my %args = @_;
+    parse_date(module=>'DateTime::Format::Alami::ID', %args);
 }
 
 $SPEC{parse_duration} = {
