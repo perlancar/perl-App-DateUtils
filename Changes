@@ -1,5 +1,13 @@
 Revision history for App-DateUtils
 
+0.05    2016-06-19 (PERLANCAR)
+
+	- Add CLIs: parse-date-using-df-alami-{en,id}.
+
+	- Update Rinci metadata (coerce_from -> coerce_rules,
+	  Data::Sah::Coerce 0.011).
+
+
 0.04    2016-05-20 (PERLANCAR)
 
 	- Add scripts: dateconv, durconv.
