@@ -1,5 +1,10 @@
 Revision history for App-DateUtils
 
+0.06    2016-06-28 (PERLANCAR)
+
+	- parse-date-using-df-alami-*: Show matched pattern.
+
+
 0.05    2016-06-19 (PERLANCAR)
 
 	- Add CLIs: parse-date-using-df-alami-{en,id}.
