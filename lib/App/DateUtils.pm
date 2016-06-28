@@ -86,11 +86,19 @@ sub parse_date {
     my @res;
     for my $date (@{ $args{dates} }) {
         my $rec = { original => $date };
-        if ($mod =~ /^DateTime::Format::(Alami|Natural)/) {
+        if ($mod =~ /^DateTime::Format::Alami/) {
+            my $res = $parser->parse_datetime($date, {format=>'combined'});
+            if ($res->{DateTime}) {
+                $rec->{is_parseable} = 1;
+                $rec->{as_epoch} = $res->{epoch};
+                $rec->{as_datetime_obj} = "$res->{DateTime}";
+                $rec->{pattern} = $res->{pattern};
+            } else {
+                $rec->{is_parseable} = 0;
+            }
+        } elsif ($mod =~ /^DateTime::Format::Natural/) {
             my $dt = $parser->parse_datetime($date);
-            my $success = $mod =~ /Alami/ ? $dt : $parser->success;
-
-            if ($success) {
+            if ($parser->{success}) {
                 $rec->{is_parseable} = 1;
                 $rec->{as_epoch} = $dt->epoch;
                 $rec->{as_datetime_obj} = "$dt";
