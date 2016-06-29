@@ -104,6 +104,7 @@ sub parse_date {
                 $rec->{as_datetime_obj} = "$dt";
             } else {
                 $rec->{is_parseable} = 0;
+                $rec->{error_msg} = $parser->error;
             }
         }
         push @res, $rec;
@@ -236,6 +237,7 @@ sub parse_duration {
                     $dtdur->nanoseconds * 1e-9;
             } else {
                 $rec->{is_parseable} = 0;
+                $rec->{error_msg} = $parser->error;
             }
         } elsif ($mod eq 'Time::Duration::Parse') {
             my $secs;
