@@ -1,5 +1,17 @@
 Revision history for App-DateUtils
 
+0.07    2016-06-29 (PERLANCAR)
+
+	- [Removed] Remove parse-duration-using-df-duration because parsing
+          duration with DateTime::Format::Duration requires predefining format
+          string.
+
+        - Add utilities parse-duration-using-df-alami-{en,id}.
+
+        - [Bugfix] Typo caused parsing date with DateTime::Format::Natural
+          always considered failed.
+
+
 0.06    2016-06-28 (PERLANCAR)
 
 	- parse-date-using-df-alami-*: Show matched pattern.

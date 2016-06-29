@@ -220,16 +220,28 @@ sub parse_duration {
     [200, "OK", \@res];
 }
 
-$SPEC{parse_duration_using_df_natural} = {
+$SPEC{parse_duration_using_df_alami_en} = {
     v => 1.1,
-    summary => 'Parse date string(s) using DateTime::Format::Natural',
+    summary => 'Parse date string(s) using DateTime::Format::Alami::EN',
     args => {
         %durations_arg,
     },
 };
-sub parse_duration_using_df_natural {
+sub parse_duration_using_df_alami_en {
     my %args = @_;
-    parse_duration(module=>'DateTime::Format::Natural', %args);
+    parse_duration(module=>'DateTime::Format::Alami::EN', %args);
+}
+
+$SPEC{parse_duration_using_df_alami_id} = {
+    v => 1.1,
+    summary => 'Parse date string(s) using DateTime::Format::Alami::ID',
+    args => {
+        %durations_arg,
+    },
+};
+sub parse_duration_using_df_alami_id {
+    my %args = @_;
+    parse_duration(module=>'DateTime::Format::Alami::ID', %args);
 }
 
 $SPEC{parse_duration_using_td_parse} = {
