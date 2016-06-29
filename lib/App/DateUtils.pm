@@ -98,7 +98,7 @@ sub parse_date {
             }
         } elsif ($mod =~ /^DateTime::Format::Natural/) {
             my $dt = $parser->parse_datetime($date);
-            if ($parser->{success}) {
+            if ($parser->success) {
                 $rec->{is_parseable} = 1;
                 $rec->{as_epoch} = $dt->epoch;
                 $rec->{as_datetime_obj} = "$dt";
