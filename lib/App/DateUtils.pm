@@ -156,7 +156,15 @@ $SPEC{parse_duration} = {
     args => {
         module => {
             schema  => ['str*', in=>[
-                'DateTime::Format::Duration',
+                'DateTime::Format::Alami::EN',
+                'DateTime::Format::Alami::ID',
+
+                # parsing duration with DF:Natural is not like what one would
+                # expect. it tries to find 2 dates in the text. even text like
+                # '2 days' would result in 1 date, which is the current date.
+
+                #'DateTime::Format::Natural',
+
                 'Time::Duration::Parse',
             ]],
             default => 'Time::Duration::Parse',
@@ -171,10 +179,12 @@ sub parse_duration {
     my $mod = $args{module};
 
     my $parser;
-    if ($mod eq 'DateTime::Format::Duration') {
-        require DateTime::Format::Duration;
-        $parser = DateTime::Format::Duration->new(
-        );
+    if ($mod eq 'DateTime::Format::Alami::EN') {
+        require DateTime::Format::Alami::EN;
+        $parser = DateTime::Format::Alami::EN->new();
+    } elsif ($mod eq 'DateTime::Format::Alami::ID') {
+        require DateTime::Format::Alami::ID;
+        $parser = DateTime::Format::Alami::ID->new();
     } elsif ($mod eq 'Time::Duration::Parse') {
         require Time::Duration::Parse;
     }
@@ -182,12 +192,14 @@ sub parse_duration {
     my @res;
     for my $dur (@{ $args{durations} }) {
         my $rec = { original => $dur };
-        if ($mod eq 'DateTime::Format::Duration') {
-            my $dtdur = $parser->parse_duration($dur);
-            if ($dtdur) {
+        if ($mod =~ /^DateTime::Format::Alami/) {
+            my $res = $parser->parse_datetime_duration($dur, {format=>'combined'});
+            if ($res) {
+                require DateTime::Format::Duration::ISO8601;
+                my $dtdurf = DateTime::Format::Duration::ISO8601->new;
                 $rec->{is_parseable} = 1;
-                $rec->{as_dtdur_obj} = "$dtdur";
-                $rec->{as_secs} = $dtdur->in_units('seconds');
+                $rec->{as_dtdur_obj} = $dtdurf->format_duration($res->{Duration});
+                $rec->{as_secs} = $res->{seconds};
             } else {
                 $rec->{is_parseable} = 0;
             }
@@ -208,16 +220,28 @@ sub parse_duration {
     [200, "OK", \@res];
 }
 
-$SPEC{parse_duration_using_df_duration} = {
+$SPEC{parse_duration_using_df_natural} = {
     v => 1.1,
-    summary => 'Parse date string(s) using DateTime::Format::Duration',
+    summary => 'Parse date string(s) using DateTime::Format::Natural',
     args => {
         %durations_arg,
     },
 };
-sub parse_duration_using_df_duration {
+sub parse_duration_using_df_natural {
     my %args = @_;
-    parse_duration(module=>'DateTime::Format::Duration', %args);
+    parse_duration(module=>'DateTime::Format::Natural', %args);
+}
+
+$SPEC{parse_duration_using_td_parse} = {
+    v => 1.1,
+    summary => 'Parse date string(s) using Time::Duration::Parse',
+    args => {
+        %durations_arg,
+    },
+};
+sub parse_duration_using_td_parse {
+    my %args = @_;
+    parse_duration(module=>'Time::Duration::Parse', %args);
 }
 
 $SPEC{dateconv} = {
