@@ -241,10 +241,14 @@ sub parse_duration {
 
 $SPEC{parse_duration_using_df_alami_en} = {
     v => 1.1,
-    summary => 'Parse date string(s) using DateTime::Format::Alami::EN',
+    summary => 'Parse duration string(s) using DateTime::Format::Alami::EN',
     args => {
         %durations_arg,
     },
+    examples => [
+        {args => {durations => ['2h, 3mins']}},
+        {args => {durations => ['foo']}},
+    ],
 };
 sub parse_duration_using_df_alami_en {
     my %args = @_;
@@ -253,22 +257,47 @@ sub parse_duration_using_df_alami_en {
 
 $SPEC{parse_duration_using_df_alami_id} = {
     v => 1.1,
-    summary => 'Parse date string(s) using DateTime::Format::Alami::ID',
+    summary => 'Parse duration string(s) using DateTime::Format::Alami::ID',
     args => {
         %durations_arg,
     },
+    examples => [
+        {args => {durations => ['2j, 3mnt']}},
+        {args => {durations => ['foo']}},
+    ],
 };
 sub parse_duration_using_df_alami_id {
     my %args = @_;
     parse_duration(module=>'DateTime::Format::Alami::ID', %args);
 }
 
-$SPEC{parse_duration_using_td_parse} = {
+$SPEC{parse_duration_using_df_natural} = {
     v => 1.1,
-    summary => 'Parse date string(s) using Time::Duration::Parse',
+    summary => 'Parse duration string(s) using DateTime::Format::Natural',
     args => {
         %durations_arg,
     },
+    examples => [
+        {args => {durations => ['for 2 weeks']}},
+        {args => {durations => ['from 23 Jun to 29 Jun']}},
+        {args => {durations => ['foo']}},
+    ],
+};
+sub parse_duration_using_df_natural {
+    my %args = @_;
+    parse_duration(module=>'DateTime::Format::Natural', %args);
+}
+
+$SPEC{parse_duration_using_td_parse} = {
+    v => 1.1,
+    summary => 'Parse duration string(s) using Time::Duration::Parse',
+    args => {
+        %durations_arg,
+    },
+    examples => [
+        {args => {durations => ['2 days 13 hours']}},
+        {args => {durations => ['foo']}},
+    ],
 };
 sub parse_duration_using_td_parse {
     my %args = @_;
