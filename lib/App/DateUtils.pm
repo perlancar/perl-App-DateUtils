@@ -44,9 +44,10 @@ $SPEC{parse_date} = {
             schema  => ['str*', in=>[
                 'DateTime::Format::Alami::EN',
                 'DateTime::Format::Alami::ID',
+                'DateTime::Format::Flexible',
                 'DateTime::Format::Natural',
             ]],
-            default => 'DateTime::Format::Natural',
+            default => 'DateTime::Format::Flexible',
             cmdline_aliases => {m=>{}},
         },
         %time_zone_arg,
@@ -74,6 +75,10 @@ sub parse_date {
         $parser = DateTime::Format::Alami::ID->new(
             ( time_zone => $args{time_zone} ) x !!(defined($args{time_zone})),
         );
+    } elsif ($mod eq 'DateTime::Format::Flexible') {
+        require DateTime::Format::Flexible;
+        $parser = DateTime::Format::Flexible->new(
+        );
     } elsif ($mod eq 'DateTime::Format::Natural') {
         require DateTime::Format::Natural;
         $parser = DateTime::Format::Natural->new(
@@ -96,6 +101,19 @@ sub parse_date {
             } else {
                 $rec->{is_parseable} = 0;
             }
+        } elsif ($mod =~ /^DateTime::Format::Flexible/) {
+            my $dt;
+            eval { $dt = $parser->parse_datetime($date) };
+            my $err = $@;
+            if (!$err) {
+                $rec->{is_parseable} = 1;
+                $rec->{as_epoch} = $dt->epoch;
+                $rec->{as_datetime_obj} = "$dt";
+            } else {
+                $err =~ s/\n/ /g;
+                $rec->{is_parseable} = 0;
+                $rec->{error_msg} = $err;
+            }
         } elsif ($mod =~ /^DateTime::Format::Natural/) {
             my $dt = $parser->parse_datetime($date);
             if ($parser->success) {
@@ -110,6 +128,23 @@ sub parse_date {
         push @res, $rec;
     }
     [200, "OK", \@res];
+}
+
+$SPEC{parse_date_using_df_flexible} = {
+    v => 1.1,
+    summary => 'Parse date string(s) using DateTime::Format::Flexible',
+    args => {
+        %time_zone_arg,
+        %dates_arg,
+    },
+    examples => [
+        {args => {dates => ['23rd Jun']}},
+        {args => {dates => ['foo']}},
+    ],
+};
+sub parse_date_using_df_flexible {
+    my %args = @_;
+    parse_date(module=>'DateTime::Format::Flexible', %args);
 }
 
 $SPEC{parse_date_using_df_natural} = {
