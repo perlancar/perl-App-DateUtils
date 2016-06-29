@@ -122,6 +122,9 @@ $SPEC{parse_date_using_df_natural} = {
         {args => {dates => ['23rd Jun']}},
         {args => {dates => ['foo']}},
     ],
+    links => [
+        {summary => 'The official CLI for DateTime::Format::Natural', url=>'dateparse'},
+    ],
 };
 sub parse_date_using_df_natural {
     my %args = @_;
@@ -434,7 +437,7 @@ date/time:
 #INSERT_EXECS_LIST
 
 
-=head1 SEE ALSO
+=head1 append:SEE ALSO
 
 L<App::datecalc>
 
