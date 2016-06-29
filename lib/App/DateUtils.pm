@@ -118,6 +118,10 @@ $SPEC{parse_date_using_df_natural} = {
         %time_zone_arg,
         %dates_arg,
     },
+    examples => [
+        {args => {dates => ['23rd Jun']}},
+        {args => {dates => ['foo']}},
+    ],
 };
 sub parse_date_using_df_natural {
     my %args = @_;
@@ -131,6 +135,10 @@ $SPEC{parse_date_using_df_alami_en} = {
         %time_zone_arg,
         %dates_arg,
     },
+    examples => [
+        {args => {dates => ['23 May']}},
+        {args => {dates => ['foo']}},
+    ],
 };
 sub parse_date_using_df_alami_en {
     my %args = @_;
@@ -144,6 +152,10 @@ $SPEC{parse_date_using_df_alami_id} = {
         %time_zone_arg,
         %dates_arg,
     },
+    examples => [
+        {args => {dates => ['23 Mei']}},
+        {args => {dates => ['foo']}},
+    ],
 };
 sub parse_date_using_df_alami_id {
     my %args = @_;
