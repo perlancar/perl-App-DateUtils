@@ -158,13 +158,7 @@ $SPEC{parse_duration} = {
             schema  => ['str*', in=>[
                 'DateTime::Format::Alami::EN',
                 'DateTime::Format::Alami::ID',
-
-                # parsing duration with DF:Natural is not like what one would
-                # expect. it tries to find 2 dates in the text. even text like
-                # '2 days' would result in 1 date, which is the current date.
-
-                #'DateTime::Format::Natural',
-
+                'DateTime::Format::Natural',
                 'Time::Duration::Parse',
             ]],
             default => 'Time::Duration::Parse',
@@ -185,6 +179,9 @@ sub parse_duration {
     } elsif ($mod eq 'DateTime::Format::Alami::ID') {
         require DateTime::Format::Alami::ID;
         $parser = DateTime::Format::Alami::ID->new();
+    } elsif ($mod eq 'DateTime::Format::Natural') {
+        require DateTime::Format::Natural;
+        $parser = DateTime::Format::Natural->new();
     } elsif ($mod eq 'Time::Duration::Parse') {
         require Time::Duration::Parse;
     }
@@ -200,6 +197,28 @@ sub parse_duration {
                 $rec->{is_parseable} = 1;
                 $rec->{as_dtdur_obj} = $dtdurf->format_duration($res->{Duration});
                 $rec->{as_secs} = $res->{seconds};
+            } else {
+                $rec->{is_parseable} = 0;
+            }
+        } elsif ($mod =~ /^DateTime::Format::Natural/) {
+            my @dt = $parser->parse_datetime_duration($dur);
+            if (@dt > 1) {
+                require DateTime::Format::Duration::ISO8601;
+                my $dtdurf = DateTime::Format::Duration::ISO8601->new;
+                my $dtdur = $dt[1]->subtract_datetime($dt[0]);
+                $rec->{is_parseable} = 1;
+                $rec->{date1} = "$dt[0]";
+                $rec->{date2} = "$dt[1]";
+                $rec->{as_dtdur_obj} = $dtdurf->format_duration($dtdur);
+                $rec->{as_secs} =
+                    $dtdur->years * 365.25*86400 +
+                    $dtdur->months * 30.4375*86400 +
+                    $dtdur->weeks * 7*86400 +
+                    $dtdur->days * 86400 +
+                    $dtdur->hours * 3600 +
+                    $dtdur->minutes * 60 +
+                    $dtdur->seconds +
+                    $dtdur->nanoseconds * 1e-9;
             } else {
                 $rec->{is_parseable} = 0;
             }
