@@ -1,5 +1,17 @@
 Revision history for App-DateUtils
 
+0.09    2016-06-29 (PERLANCAR)
+
+	- Add utility: parse-date-using-df-flexible.
+
+	- Show error message from DateTime::Format::Natural on parsing
+	  failure.
+
+	- Mention dateparse.
+
+	- Add more examples.
+
+
 0.08    2016-06-29 (PERLANCAR)
 
 	- Add examples.
