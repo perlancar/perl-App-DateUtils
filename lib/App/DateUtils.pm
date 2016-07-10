@@ -133,7 +133,7 @@ sub parse_date {
             my $rec = { original => $date, module => $mod };
             unless ($mod_is_installed) {
                 $rec->{error_msg} = "module not installed";
-                next DATE;
+                goto PUSH_RESULT;
             }
             if ($mod =~ /^DateTime::Format::Alami/) {
                 my $res;
@@ -175,6 +175,7 @@ sub parse_date {
                     $rec->{error_msg} = $parser->error;
                 }
             }
+          PUSH_RESULT:
             push @res, $rec;
         } # for dates
     } # for mods
@@ -315,7 +316,7 @@ sub parse_duration {
             my $rec = { original => $dur, module => $mod };
             unless ($mod_is_installed) {
                 $rec->{error_msg} = "module not installed";
-                next DURATION;
+                goto PUSH_RESULT;
             }
             if ($mod =~ /^DateTime::Format::Alami/) {
                 my $res;
@@ -364,6 +365,7 @@ sub parse_duration {
                     $rec->{as_secs} = $secs;
                 }
             }
+          PUSH_RESULT:
             push @res, $rec;
         } # for durations
     } # for modules
