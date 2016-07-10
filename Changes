@@ -1,5 +1,11 @@
 Revision history for App-DateUtils
 
+0.10    2016-07-10 (PERLANCAR)
+
+        - parse-date, parse-duration: Add option --all-modules (-a) to parse
+          dates/durations with all installed modules.
+
+
 0.09    2016-06-29 (PERLANCAR)
 
 	- Add utility: parse-date-using-df-flexible.
