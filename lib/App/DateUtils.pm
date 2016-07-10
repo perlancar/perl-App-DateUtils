@@ -36,22 +36,41 @@ my %durations_arg = (
     },
 );
 
+my %all_modules_arg = (
+    all_modules => {
+        summary => 'Parse using all installed modules and '.
+            'return all the result at once',
+        schema => ['bool*', is=>1],
+        cmdline_aliases => {a=>{}},
+    },
+);
+
+my @parse_date_modules = (
+    'DateTime::Format::Alami::EN',
+    'DateTime::Format::Alami::ID',
+    'DateTime::Format::Flexible',
+    'DateTime::Format::Flexible(de)',
+    'DateTime::Format::Flexible(es)',
+    'DateTime::Format::Natural',
+);
+
+my @parse_duration_modules = (
+    'DateTime::Format::Alami::EN',
+    'DateTime::Format::Alami::ID',
+    'DateTime::Format::Natural',
+    'Time::Duration::Parse',
+);
+
 $SPEC{parse_date} = {
     v => 1.1,
     summary => 'Parse date string(s) using one of several modules',
     args => {
         module => {
-            schema  => ['str*', in=>[
-                'DateTime::Format::Alami::EN',
-                'DateTime::Format::Alami::ID',
-                'DateTime::Format::Flexible',
-                'DateTime::Format::Flexible(de)',
-                'DateTime::Format::Flexible(es)',
-                'DateTime::Format::Natural',
-            ]],
+            schema  => ['str*', in=>\@parse_date_modules],
             default => 'DateTime::Format::Flexible',
             cmdline_aliases => {m=>{}},
         },
+        %all_modules_arg,
         %time_zone_arg,
         %dates_arg,
     },
@@ -64,77 +83,103 @@ $SPEC{parse_date} = {
 sub parse_date {
     my %args = @_;
 
-    my $mod = $args{module};
-
-    my $parser;
-    if ($mod eq 'DateTime::Format::Alami::EN') {
-        require DateTime::Format::Alami::EN;
-        $parser = DateTime::Format::Alami::EN->new(
-            ( time_zone => $args{time_zone} ) x !!(defined($args{time_zone})),
-        );
-    } elsif ($mod eq 'DateTime::Format::Alami::ID') {
-        require DateTime::Format::Alami::ID;
-        $parser = DateTime::Format::Alami::ID->new(
-            ( time_zone => $args{time_zone} ) x !!(defined($args{time_zone})),
-        );
-    } elsif ($mod =~ /^DateTime::Format::Flexible/) {
-        require DateTime::Format::Flexible;
-        $parser = DateTime::Format::Flexible->new(
-        );
-    } elsif ($mod eq 'DateTime::Format::Natural') {
-        require DateTime::Format::Natural;
-        $parser = DateTime::Format::Natural->new(
-            ( time_zone => $args{time_zone} ) x !!(defined($args{time_zone})),
-        );
+    my %mods; # val = 1 if installed
+    if ($args{all_modules}) {
+        require Module::Path::More;
+        for my $mod0 (@parse_date_modules) {
+            (my $mod = $mod0) =~ s/\(.+//;
+            $mods{$mod0} = Module::Path::More::module_path(module => $mod) ?
+                1:0;
+        }
     } else {
-        return [400, "Unknown module '$mod'"];
+        %mods = ($args{module} => 1);
     }
 
     my @res;
-    for my $date (@{ $args{dates} }) {
-        my $rec = { original => $date };
-        if ($mod =~ /^DateTime::Format::Alami/) {
-            my $res = $parser->parse_datetime($date, {format=>'combined'});
-            if ($res->{DateTime}) {
-                $rec->{is_parseable} = 1;
-                $rec->{as_epoch} = $res->{epoch};
-                $rec->{as_datetime_obj} = "$res->{DateTime}";
-                $rec->{pattern} = $res->{pattern};
+    for my $mod (sort keys %mods) {
+        my $mod_is_installed = $mods{$mod};
+
+        my $parser;
+        if ($mod_is_installed) {
+            if ($mod eq 'DateTime::Format::Alami::EN') {
+                require DateTime::Format::Alami::EN;
+                $parser = DateTime::Format::Alami::EN->new(
+                    ( time_zone => $args{time_zone} ) x
+                        !!(defined($args{time_zone})),
+                );
+            } elsif ($mod eq 'DateTime::Format::Alami::ID') {
+                require DateTime::Format::Alami::ID;
+                $parser = DateTime::Format::Alami::ID->new(
+                    ( time_zone => $args{time_zone} ) x
+                        !!(defined($args{time_zone})),
+                );
+            } elsif ($mod =~ /^DateTime::Format::Flexible/) {
+                require DateTime::Format::Flexible;
+                $parser = DateTime::Format::Flexible->new(
+                );
+            } elsif ($mod eq 'DateTime::Format::Natural') {
+                require DateTime::Format::Natural;
+                $parser = DateTime::Format::Natural->new(
+                    ( time_zone => $args{time_zone} ) x
+                        !!(defined($args{time_zone})),
+                );
             } else {
-                $rec->{is_parseable} = 0;
-            }
-        } elsif ($mod =~ /^DateTime::Format::Flexible/) {
-            my $dt;
-            my %opts;
-            $opts{lang} = [$1] if $mod =~ /\((\w+)\)$/;
-            eval { $dt = $parser->parse_datetime(
-                $date,
-                %opts,
-            ) };
-            my $err = $@;
-            if (!$err) {
-                $rec->{is_parseable} = 1;
-                $rec->{as_epoch} = $dt->epoch;
-                $rec->{as_datetime_obj} = "$dt";
-            } else {
-                $err =~ s/\n/ /g;
-                $rec->{is_parseable} = 0;
-                $rec->{error_msg} = $err;
-            }
-        } elsif ($mod =~ /^DateTime::Format::Natural/) {
-            my $dt = $parser->parse_datetime($date);
-            if ($parser->success) {
-                $rec->{is_parseable} = 1;
-                $rec->{as_epoch} = $dt->epoch;
-                $rec->{as_datetime_obj} = "$dt";
-            } else {
-                $rec->{is_parseable} = 0;
-                $rec->{error_msg} = $parser->error;
+                return [400, "Unknown module '$mod'"];
             }
         }
-        push @res, $rec;
-    }
-    [200, "OK", \@res];
+
+      DATE:
+        for my $date (@{ $args{dates} }) {
+            my $rec = { original => $date, module => $mod };
+            unless ($mod_is_installed) {
+                $rec->{error_msg} = "module not installed";
+                next DATE;
+            }
+            if ($mod =~ /^DateTime::Format::Alami/) {
+                my $res;
+                eval { $parser->parse_datetime($date, {format=>'combined'}) };
+                if ($@) {
+                    $rec->{is_parseable} = 0;
+                } else {
+                    $rec->{is_parseable} = 1;
+                    $rec->{as_epoch} = $res->{epoch};
+                    $rec->{as_datetime_obj} = "$res->{DateTime}";
+                    $rec->{pattern} = $res->{pattern};
+                }
+            } elsif ($mod =~ /^DateTime::Format::Flexible/) {
+                my $dt;
+                my %opts;
+                $opts{lang} = [$1] if $mod =~ /\((\w+)\)$/;
+                eval { $dt = $parser->parse_datetime(
+                    $date,
+                    %opts,
+                ) };
+                my $err = $@;
+                if (!$err) {
+                    $rec->{is_parseable} = 1;
+                    $rec->{as_epoch} = $dt->epoch;
+                    $rec->{as_datetime_obj} = "$dt";
+                } else {
+                    $err =~ s/\n/ /g;
+                    $rec->{is_parseable} = 0;
+                    $rec->{error_msg} = $err;
+                }
+            } elsif ($mod =~ /^DateTime::Format::Natural/) {
+                my $dt = $parser->parse_datetime($date);
+                if ($parser->success) {
+                    $rec->{is_parseable} = 1;
+                    $rec->{as_epoch} = $dt->epoch;
+                    $rec->{as_datetime_obj} = "$dt";
+                } else {
+                    $rec->{is_parseable} = 0;
+                    $rec->{error_msg} = $parser->error;
+                }
+            }
+            push @res, $rec;
+        } # for dates
+    } # for mods
+
+    [200, "OK", \@res, {'table.fields'=>[qw/module original is_parseable as_epoch as_datetime_obj error_msg/]}];
 }
 
 $SPEC{parse_date_using_df_flexible} = {
@@ -222,89 +267,108 @@ $SPEC{parse_duration} = {
     summary => 'Parse duration string(s) using one of several modules',
     args => {
         module => {
-            schema  => ['str*', in=>[
-                'DateTime::Format::Alami::EN',
-                'DateTime::Format::Alami::ID',
-                'DateTime::Format::Natural',
-                'Time::Duration::Parse',
-            ]],
+            schema  => ['str*', in=>\@parse_duration_modules],
             default => 'Time::Duration::Parse',
             cmdline_aliases => {m=>{}},
         },
         %durations_arg,
+        %all_modules_arg,
     },
 };
 sub parse_duration {
     my %args = @_;
 
-    my $mod = $args{module};
-
-    my $parser;
-    if ($mod eq 'DateTime::Format::Alami::EN') {
-        require DateTime::Format::Alami::EN;
-        $parser = DateTime::Format::Alami::EN->new();
-    } elsif ($mod eq 'DateTime::Format::Alami::ID') {
-        require DateTime::Format::Alami::ID;
-        $parser = DateTime::Format::Alami::ID->new();
-    } elsif ($mod eq 'DateTime::Format::Natural') {
-        require DateTime::Format::Natural;
-        $parser = DateTime::Format::Natural->new();
-    } elsif ($mod eq 'Time::Duration::Parse') {
-        require Time::Duration::Parse;
+    my %mods; # val = 1 if installed
+    if ($args{all_modules}) {
+        require Module::Path::More;
+        for my $mod0 (@parse_duration_modules) {
+            (my $mod = $mod0) =~ s/\(.+//;
+            $mods{$mod0} = Module::Path::More::module_path(module => $mod) ?
+                1:0;
+        }
+    } else {
+        %mods = ($args{module} => 1);
     }
 
     my @res;
-    for my $dur (@{ $args{durations} }) {
-        my $rec = { original => $dur };
-        if ($mod =~ /^DateTime::Format::Alami/) {
-            my $res = $parser->parse_datetime_duration($dur, {format=>'combined'});
-            if ($res) {
-                require DateTime::Format::Duration::ISO8601;
-                my $dtdurf = DateTime::Format::Duration::ISO8601->new;
-                $rec->{is_parseable} = 1;
-                $rec->{as_dtdur_obj} = $dtdurf->format_duration($res->{Duration});
-                $rec->{as_secs} = $res->{seconds};
-            } else {
-                $rec->{is_parseable} = 0;
-            }
-        } elsif ($mod =~ /^DateTime::Format::Natural/) {
-            my @dt = $parser->parse_datetime_duration($dur);
-            if (@dt > 1) {
-                require DateTime::Format::Duration::ISO8601;
-                my $dtdurf = DateTime::Format::Duration::ISO8601->new;
-                my $dtdur = $dt[1]->subtract_datetime($dt[0]);
-                $rec->{is_parseable} = 1;
-                $rec->{date1} = "$dt[0]";
-                $rec->{date2} = "$dt[1]";
-                $rec->{as_dtdur_obj} = $dtdurf->format_duration($dtdur);
-                $rec->{as_secs} =
-                    $dtdur->years * 365.25*86400 +
-                    $dtdur->months * 30.4375*86400 +
-                    $dtdur->weeks * 7*86400 +
-                    $dtdur->days * 86400 +
-                    $dtdur->hours * 3600 +
-                    $dtdur->minutes * 60 +
-                    $dtdur->seconds +
-                    $dtdur->nanoseconds * 1e-9;
-            } else {
-                $rec->{is_parseable} = 0;
-                $rec->{error_msg} = $parser->error;
-            }
-        } elsif ($mod eq 'Time::Duration::Parse') {
-            my $secs;
-            eval { $secs = Time::Duration::Parse::parse_duration($dur) };
-            if ($@) {
-                $rec->{is_parseable} = 0;
-                $rec->{error_msg} = $@;
-                $rec->{error_msg} =~ s/\n+/ /g;
-            } else {
-                $rec->{is_parseable} = 1;
-                $rec->{as_secs} = $secs;
+    for my $mod (sort keys %mods) {
+        my $mod_is_installed = $mods{$mod};
+
+        my $parser;
+        if ($mod_is_installed) {
+            if ($mod eq 'DateTime::Format::Alami::EN') {
+                require DateTime::Format::Alami::EN;
+                $parser = DateTime::Format::Alami::EN->new();
+            } elsif ($mod eq 'DateTime::Format::Alami::ID') {
+                require DateTime::Format::Alami::ID;
+                $parser = DateTime::Format::Alami::ID->new();
+            } elsif ($mod eq 'DateTime::Format::Natural') {
+                require DateTime::Format::Natural;
+                $parser = DateTime::Format::Natural->new();
+            } elsif ($mod eq 'Time::Duration::Parse') {
+                require Time::Duration::Parse;
             }
         }
-        push @res, $rec;
-    }
-    [200, "OK", \@res];
+
+      DURATION:
+        for my $dur (@{ $args{durations} }) {
+            my $rec = { original => $dur, module => $mod };
+            unless ($mod_is_installed) {
+                $rec->{error_msg} = "module not installed";
+                next DURATION;
+            }
+            if ($mod =~ /^DateTime::Format::Alami/) {
+                my $res;
+                eval { $res = $parser->parse_datetime_duration($dur, {format=>'combined'}) };
+                if ($@) {
+                    $rec->{is_parseable} = 0;
+                } else {
+                    require DateTime::Format::Duration::ISO8601;
+                    my $dtdurf = DateTime::Format::Duration::ISO8601->new;
+                    $rec->{is_parseable} = 1;
+                    $rec->{as_dtdur_obj} = $dtdurf->format_duration($res->{Duration});
+                    $rec->{as_secs} = $res->{seconds};
+                }
+            } elsif ($mod =~ /^DateTime::Format::Natural/) {
+                my @dt = $parser->parse_datetime_duration($dur);
+                if (@dt > 1) {
+                    require DateTime::Format::Duration::ISO8601;
+                    my $dtdurf = DateTime::Format::Duration::ISO8601->new;
+                    my $dtdur = $dt[1]->subtract_datetime($dt[0]);
+                    $rec->{is_parseable} = 1;
+                    $rec->{date1} = "$dt[0]";
+                    $rec->{date2} = "$dt[1]";
+                    $rec->{as_dtdur_obj} = $dtdurf->format_duration($dtdur);
+                    $rec->{as_secs} =
+                        $dtdur->years * 365.25*86400 +
+                        $dtdur->months * 30.4375*86400 +
+                        $dtdur->weeks * 7*86400 +
+                        $dtdur->days * 86400 +
+                        $dtdur->hours * 3600 +
+                        $dtdur->minutes * 60 +
+                        $dtdur->seconds +
+                        $dtdur->nanoseconds * 1e-9;
+                } else {
+                    $rec->{is_parseable} = 0;
+                    $rec->{error_msg} = $parser->error;
+                }
+            } elsif ($mod eq 'Time::Duration::Parse') {
+                my $secs;
+                eval { $secs = Time::Duration::Parse::parse_duration($dur) };
+                if ($@) {
+                    $rec->{is_parseable} = 0;
+                    $rec->{error_msg} = $@;
+                    $rec->{error_msg} =~ s/\n+/ /g;
+                } else {
+                    $rec->{is_parseable} = 1;
+                    $rec->{as_secs} = $secs;
+                }
+            }
+            push @res, $rec;
+        } # for durations
+    } # for modules
+
+    [200, "OK", \@res, {'table.fields'=>[qw/module original is_parseable as_secs as_dtdur_obj error_msg/]}];
 }
 
 $SPEC{parse_duration_using_df_alami_en} = {
