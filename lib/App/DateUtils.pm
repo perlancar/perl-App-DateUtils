@@ -85,10 +85,10 @@ sub parse_date {
 
     my %mods; # val = 1 if installed
     if ($args{all_modules}) {
-        require Module::Path::More;
+        require Module::Installed::Tiny;
         for my $mod0 (@parse_date_modules) {
             (my $mod = $mod0) =~ s/\(.+//;
-            $mods{$mod0} = Module::Path::More::module_path(module => $mod) ?
+            $mods{$mod0} = Module::Installed::Tiny::module_installed($mod) ?
                 1:0;
         }
     } else {
@@ -281,10 +281,10 @@ sub parse_duration {
 
     my %mods; # val = 1 if installed
     if ($args{all_modules}) {
-        require Module::Path::More;
+        require Module::Installed::Tiny;
         for my $mod0 (@parse_duration_modules) {
             (my $mod = $mod0) =~ s/\(.+//;
-            $mods{$mod0} = Module::Path::More::module_path(module => $mod) ?
+            $mods{$mod0} = Module::Installed::Tiny::module_installed($mod) ?
                 1:0;
         }
     } else {
