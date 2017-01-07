@@ -1,5 +1,3 @@
-Revision history for App-DateUtils
-
 0.10    2016-07-10 (PERLANCAR)
 
         - parse-date, parse-duration: Add option --all-modules (-a) to parse
