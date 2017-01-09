@@ -137,7 +137,7 @@ sub parse_date {
             }
             if ($mod =~ /^DateTime::Format::Alami/) {
                 my $res;
-                eval { $parser->parse_datetime($date, {format=>'combined'}) };
+                eval { $res = $parser->parse_datetime($date, {format=>'combined'}) };
                 if ($@) {
                     $rec->{is_parseable} = 0;
                 } else {
