@@ -46,6 +46,7 @@ my %all_modules_arg = (
 );
 
 my @parse_date_modules = (
+    'DateTime::Format::Alami',
     'DateTime::Format::Alami::EN',
     'DateTime::Format::Alami::ID',
     'DateTime::Format::Flexible',
@@ -55,6 +56,7 @@ my @parse_date_modules = (
 );
 
 my @parse_duration_modules = (
+    'DateTime::Format::Alami',
     'DateTime::Format::Alami::EN',
     'DateTime::Format::Alami::ID',
     'DateTime::Format::Natural',
@@ -229,6 +231,23 @@ sub parse_date_using_df_natural {
     parse_date(module=>'DateTime::Format::Natural', %args);
 }
 
+$SPEC{parse_date_using_df_alami} = {
+    v => 1.1,
+    summary => 'Parse date string(s) using DateTime::Format::Alami',
+    args => {
+        %time_zone_arg,
+        %dates_arg,
+    },
+    examples => [
+        {args => {dates => ['23 Jan']}},
+        {args => {dates => ['foo']}},
+    ],
+};
+sub parse_date_using_df_alami {
+    my %args = @_;
+    parse_date(module=>'DateTime::Format::Alami', %args);
+}
+
 $SPEC{parse_date_using_df_alami_en} = {
     v => 1.1,
     summary => 'Parse date string(s) using DateTime::Format::Alami::EN',
@@ -237,6 +256,7 @@ $SPEC{parse_date_using_df_alami_en} = {
         %dates_arg,
     },
     examples => [
+        {args => {dates => ['1 day ago']}},
         {args => {dates => ['23 May']}},
         {args => {dates => ['foo']}},
     ],
@@ -254,6 +274,7 @@ $SPEC{parse_date_using_df_alami_id} = {
         %dates_arg,
     },
     examples => [
+        {args => {dates => ['1 hari yg lalu']}},
         {args => {dates => ['23 Mei']}},
         {args => {dates => ['foo']}},
     ],
@@ -371,6 +392,22 @@ sub parse_duration {
     } # for modules
 
     [200, "OK", \@res, {'table.fields'=>[qw/module original is_parseable as_secs as_dtdur_obj error_msg/]}];
+}
+
+$SPEC{parse_duration_using_df_alami} = {
+    v => 1.1,
+    summary => 'Parse duration string(s) using DateTime::Format::Alami',
+    args => {
+        %durations_arg,
+    },
+    examples => [
+        {args => {durations => ['2h, 3mins']}},
+        {args => {durations => ['foo']}},
+    ],
+};
+sub parse_duration_using_df_alami {
+    my %args = @_;
+    parse_duration(module=>'DateTime::Format::Alami', %args);
 }
 
 $SPEC{parse_duration_using_df_alami_en} = {
