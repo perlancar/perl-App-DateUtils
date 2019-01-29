@@ -52,6 +52,8 @@ my @parse_date_modules = (
     'DateTime::Format::Flexible(de)',
     'DateTime::Format::Flexible(es)',
     'DateTime::Format::Natural',
+
+    'Date::Parse',
 );
 
 my @parse_duration_modules = (
@@ -123,6 +125,9 @@ sub parse_date {
                     ( time_zone => $args{time_zone} ) x
                         !!(defined($args{time_zone})),
                 );
+            } elsif ($mod eq 'Date::Parse') {
+                require Date::Parse;
+                require DateTime; # to show as_datetime_obj
             } else {
                 return [400, "Unknown module '$mod'"];
             }
@@ -173,6 +178,15 @@ sub parse_date {
                 } else {
                     $rec->{is_parseable} = 0;
                     $rec->{error_msg} = $parser->error;
+                }
+            } elsif ($mod eq 'Date::Parse') {
+                my $time = Date::Parse::str2time($date);
+                if (defined $time) {
+                    $rec->{is_parseable} = 1;
+                    $rec->{as_epoch} = $time;
+                    $rec->{as_datetime_obj} = do { my $dt = DateTime->from_epoch(epoch => $time); "$dt" };
+                } else {
+                    $rec->{is_parseable} = 0;
                 }
             }
           PUSH_RESULT:
