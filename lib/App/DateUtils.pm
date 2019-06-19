@@ -559,6 +559,46 @@ sub durconv {
     }
 }
 
+$SPEC{datediff} = {
+    v => 1.1,
+    summary => 'Diff (subtract) two dates, show as ISO8601 duration',
+    args => {
+        date1 => {
+            schema => ['date*', {
+                'x.perl.coerce_rules' => ['str_natural','str_iso8601','float_epoch'],
+                'x.perl.coerce_to' => 'DateTime',
+            }],
+            req => 1,
+            pos => 0,
+        },
+        date2 => {
+            schema => ['date*', {
+                'x.perl.coerce_rules' => ['str_natural','str_iso8601','float_epoch'],
+                'x.perl.coerce_to' => 'DateTime',
+            }],
+            req => 1,
+            pos => 1,
+        },
+        # XXX option to select output format
+    },
+    result_naked => 1,
+    examples => [
+        {
+            argv => [qw/2019-06-18T20:08:42 2019-06-19T06:02:03/],
+            result => '',
+        },
+    ],
+};
+sub datediff {
+    require DateTime::Format::Duration::ISO8601;
+    my %args = @_;
+    my $date1 = $args{date1};
+    my $date2 = $args{date2};
+
+    my $dur = $date1->subtract_datetime($date2);
+    DateTime::Format::Duration::ISO8601->format_duration($dur);
+}
+
 1;
 # ABSTRACT: An assortment of date-/time-related CLI utilities
 
