@@ -579,24 +579,53 @@ $SPEC{datediff} = {
             req => 1,
             pos => 1,
         },
-        # XXX option to select output format
+        as => {
+            schema => ['str*', in=>['iso8601', 'concise_hms', 'hms', 'seconds']],
+            default => 'iso8601',
+        },
     },
     result_naked => 1,
     examples => [
         {
             argv => [qw/2019-06-18T20:08:42 2019-06-19T06:02:03/],
-            result => '',
+            result => 'PT9H53M21S',
+        },
+        {
+            argv => [qw/2019-06-18T20:08:42 2019-06-19T06:02:03 --as hms/],
+            result => '09:53:21',
+        },
+        {
+            argv => [qw/2019-06-18T20:08:42 2019-06-22T06:02:03 --as concise_hms/],
+            result => '3d 09:53:21',
+        },
+        {
+            argv => [qw/2019-06-18T20:08:42 2019-06-19T06:02:03 --as seconds/],
+            result => '35601',
         },
     ],
 };
 sub datediff {
-    require DateTime::Format::Duration::ISO8601;
     my %args = @_;
     my $date1 = $args{date1};
     my $date2 = $args{date2};
+    my $as = $args{as} // 'iso8601';
 
     my $dur = $date1->subtract_datetime($date2);
-    DateTime::Format::Duration::ISO8601->format_duration($dur);
+
+    if ($as eq 'seconds') {
+        $dur->years  * 365.25 * 86400 +
+        $dur->months * 30.5   * 86400 +
+        $dur->days            * 86400 +
+        $dur->hours           *  3600 +
+        $dur->minutes         *    60 +
+        $dur->seconds;
+    } elsif ($as eq 'concise_hms' || $as eq 'hms') {
+        require DateTime::Format::Duration::ConciseHMS;
+        DateTime::Format::Duration::ConciseHMS->format_duration($dur);
+    } else {
+        require DateTime::Format::Duration::ISO8601;
+        DateTime::Format::Duration::ISO8601->format_duration($dur);
+    }
 }
 
 1;
