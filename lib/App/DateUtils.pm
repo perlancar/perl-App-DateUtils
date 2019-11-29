@@ -1,6 +1,8 @@
 package App::DateUtils;
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -459,7 +461,7 @@ $SPEC{dateconv} = {
         date => {
             schema => ['date*', {
                 'x.perl.coerce_to' => 'DateTime',
-                'x.perl.coerce_rules' => ['str_alami'],
+                'x.perl.coerce_rules' => ['From_str::alami'],
             }],
             req => 1,
             pos => 0,
@@ -565,7 +567,7 @@ $SPEC{datediff} = {
     args => {
         date1 => {
             schema => ['date*', {
-                'x.perl.coerce_rules' => ['str_natural','str_iso8601','float_epoch'],
+                'x.perl.coerce_rules' => ['From_str::natural','From_str::iso8601','From_float::epoch'],
                 'x.perl.coerce_to' => 'DateTime',
             }],
             req => 1,
@@ -573,7 +575,7 @@ $SPEC{datediff} = {
         },
         date2 => {
             schema => ['date*', {
-                'x.perl.coerce_rules' => ['str_natural','str_iso8601','float_epoch'],
+                'x.perl.coerce_rules' => ['From_str::natural','From_str::iso8601','From_float::epoch'],
                 'x.perl.coerce_to' => 'DateTime',
             }],
             req => 1,
