@@ -461,14 +461,17 @@ $SPEC{dateconv} = {
         date => {
             schema => ['date*', {
                 'x.perl.coerce_to' => 'DateTime',
-                'x.perl.coerce_rules' => ['From_str::natural'],
+                'x.perl.coerce_rules' => ['From_str::iso8601', 'From_str::natural'],
             }],
             req => 1,
             pos => 0,
         },
         to => {
-            schema => ['str*', in=>[qw/epoch ymd/]], # XXX: iso8601, ...
+            schema => ['str*', in=>[qw/epoch ymd iso8601 ALL/]],
             default => 'epoch',
+            cmdline_aliases => {
+                a => {is_flag=>1, summary => 'Shortcut for --to=ALL', code => sub {$_[0]{to} = 'ALL'}},
+            },
         },
     },
     result_naked => 1,
@@ -483,6 +486,17 @@ $SPEC{dateconv} = {
             args => {date => '1463702400', to=>'ymd'},
             result => '2016-05-20',
         },
+        {
+            summary => 'Convert "now" to iso8601',
+            args => {date => 'now', to=>'iso8601'},
+            result => '2020-01-31T04:54:01Z',
+            test => 0,
+        },
+        {
+            summary => 'Show all possible conversions',
+            args => {date => 'now', to => 'ALL'},
+            test => 0,
+        },
     ],
 };
 sub dateconv {
@@ -494,6 +508,18 @@ sub dateconv {
         return $date->epoch;
     } elsif ($to eq 'ymd') {
         return $date->ymd;
+    } elsif ($to eq 'iso8601') {
+        require DateTime::Format::ISO8601::Format;
+        return DateTime::Format::ISO8601::Format->new->format_datetime($date);
+    } elsif ($to eq 'ALL') {
+        return {
+            epoch => $date->epoch,
+            ymd   => $date->ymd,
+            iso8601 => do {
+                require DateTime::Format::ISO8601::Format;
+                DateTime::Format::ISO8601::Format->new->format_datetime($date);
+            },
+        };
     } else {
         die "Unknown format '$to'";
     }
