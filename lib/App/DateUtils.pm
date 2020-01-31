@@ -487,10 +487,14 @@ $SPEC{dateconv} = {
             result => '2016-05-20',
         },
         {
-            summary => 'Convert "now" to iso8601',
-            args => {date => 'now', to=>'iso8601'},
+            summary => 'Convert epoch to iso8601',
+            args => {date => '1580446441', to=>'iso8601'},
             result => '2020-01-31T04:54:01Z',
-            test => 0,
+        },
+        {
+            summary => 'Convert iso8601 to epoch',
+            args => {date => '2020-01-31T04:54:01Z', to=>'epoch'},
+            result => '1580446441',
         },
         {
             summary => 'Show all possible conversions',
