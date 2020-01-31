@@ -529,6 +529,48 @@ sub dateconv {
     }
 }
 
+$SPEC{strftime} = {
+    v => 1.1,
+    summary => 'Format date using strftime()',
+    args => {
+        format => {
+            schema => 'str*',
+            req => 1,
+            pos => 0,
+        },
+        date => {
+            schema => ['date*', {
+                'x.perl.coerce_to' => 'DateTime',
+                'x.perl.coerce_rules' => ['From_str::iso8601', 'From_str::natural'],
+            }],
+            pos => 1,
+        },
+    },
+    result_naked => 1,
+    examples => [
+        {
+            summary => 'Format current time as yyyy-mm-dd',
+            args => {format => '%Y-%m-%d'},
+            test => 0,
+        },
+        {
+            summary => 'Format a specific time as yyyy-mm-dd',
+            args => {format => '%Y-%m-%d', date => 'tomorrow'},
+            test => 0,
+        },
+    ],
+};
+sub strftime {
+    require DateTime;
+    require POSIX;
+
+    my %args = @_;
+    my $format = $args{format};
+    my $date   = $args{date} // DateTime->now;
+
+    POSIX::strftime($format, gmtime($date->epoch));
+}
+
 $SPEC{durconv} = {
     v => 1.1,
     summary => 'Convert duration to another format',
