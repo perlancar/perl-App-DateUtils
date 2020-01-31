@@ -541,8 +541,11 @@ $SPEC{durconv} = {
             pos => 0,
         },
         to => {
-            schema => ['str*', in=>[qw/secs hash/]], # XXX: iso8601, ...
+            schema => ['str*', in=>[qw/secs hash iso8601 ALL/]],
             default => 'secs',
+            cmdline_aliases => {
+                a => {is_flag=>1, summary => 'Shortcut for --to=ALL', code => sub {$_[0]{to} = 'ALL'}},
+            },
         },
     },
     result_naked => 1,
@@ -552,6 +555,16 @@ $SPEC{durconv} = {
             args => {duration => '3h2m'},
             result => 10920,
         },
+        {
+            summary => 'Convert "3h2m" to iso8601',
+            args => {duration => '3h2m', to=>'iso8601'},
+            result => 'PT3H2M',
+        },
+        {
+            summary => 'Show all possible conversions',
+            args => {duration => '3h2m', to => 'ALL'},
+            test => 0,
+        },
     ],
 };
 sub durconv {
@@ -559,7 +572,7 @@ sub durconv {
     my $dur = $args{duration};
     my $to  = $args{to};
 
-    if ($to eq 'secs') {
+    my $code_secs = sub {
         # approximation
         return (
             $dur->years       * 365*86400 +
@@ -571,7 +584,9 @@ sub durconv {
             $dur->seconds     *         1 +
             $dur->nanoseconds *      1e-9
         );
-    } elsif ($to eq 'hash') {
+    };
+
+    my $code_hash = sub {
         my $h = {
             years => $dur->years,
             months => $dur->months,
@@ -586,6 +601,27 @@ sub durconv {
             delete $h->{$_} if $h->{$_} == 0;
         }
         return $h;
+    };
+
+    my $code_iso8601 = sub {
+        require DateTime::Format::Duration::ISO8601;
+        DateTime::Format::Duration::ISO8601->new->format_duration($dur);
+    };
+
+    if ($to eq 'secs') {
+        return $code_secs->();
+    } elsif ($to eq 'hash') {
+        return $code_hash->();
+    } elsif ($to eq 'hash') {
+        return $code_hash->();
+    } elsif ($to eq 'iso8601') {
+        return $code_iso8601->();
+    } elsif ($to eq 'ALL') {
+        return {
+            secs => $code_secs->(),
+            hash => $code_hash->(),
+            iso8601 => $code_iso8601->(),
+        };
     } else {
         die "Unknown format '$to'";
     }
