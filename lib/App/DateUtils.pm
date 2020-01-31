@@ -571,6 +571,51 @@ sub strftime {
     POSIX::strftime($format, gmtime($date->epoch));
 }
 
+$SPEC{strftimeq} = {
+    v => 1.1,
+    summary => 'Format date using strftimeq()',
+    description => <<'_',
+
+strftimeq() is like POSIX's strftime(), but allows an extra conversion `%(...)q`
+to insert Perl code, for flexibility in customizing format. For more details,
+read <pm:Date::strftimeq>.
+
+_
+    args => {
+        format => {
+            schema => 'str*',
+            req => 1,
+            pos => 0,
+        },
+        date => {
+            schema => ['date*', {
+                'x.perl.coerce_to' => 'DateTime',
+                'x.perl.coerce_rules' => ['From_str::iso8601', 'From_str::natural'],
+            }],
+            pos => 1,
+        },
+    },
+    result_naked => 1,
+    examples => [
+        {
+            summary => 'Format current time as yyyy-mm-dd but add "Sun" when the date is Sunday',
+            args => {format => '%Y-%m-%d%( require Date::DayOfWeek; Date::DayOfWeek::dayofweek($_[3], $_[4]+1, $_[5]+1900) == 0 ? "sun":"" )q'},
+            test => 0,
+        },
+    ],
+};
+sub strftimeq {
+    require DateTime;
+    require Date::strftimeq;
+    require POSIX;
+
+    my %args = @_;
+    my $format = $args{format};
+    my $date   = $args{date} // DateTime->now;
+
+    Date::strftimeq::strftimeq($format, gmtime($date->epoch));
+}
+
 $SPEC{durconv} = {
     v => 1.1,
     summary => 'Convert duration to another format',
