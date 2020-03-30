@@ -456,7 +456,7 @@ sub parse_duration_using_td_parse {
 
 $SPEC{dateconv} = {
     v => 1.1,
-    summary => 'Convert date to another format',
+    summary => 'Convert date from one format to another',
     args => {
         date => {
             schema => ['date*', {
@@ -618,7 +618,7 @@ sub strftimeq {
 
 $SPEC{durconv} = {
     v => 1.1,
-    summary => 'Convert duration to another format',
+    summary => 'Convert duration from one format to another',
     args => {
         duration => {
             schema => ['duration*', {
