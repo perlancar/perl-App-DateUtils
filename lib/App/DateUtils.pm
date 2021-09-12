@@ -1,13 +1,13 @@
 package App::DateUtils;
 
+use 5.010001;
+use strict;
+use warnings;
+
 # AUTHORITY
 # DATE
 # DIST
 # VERSION
-
-use 5.010001;
-use strict;
-use warnings;
 
 our %SPEC;
 
@@ -48,8 +48,8 @@ my %all_modules_arg = (
 );
 
 my @parse_date_modules = (
-    'DateTime::Format::Alami::EN',
-    'DateTime::Format::Alami::ID',
+    #'DateTime::Format::Alami::EN',
+    #'DateTime::Format::Alami::ID',
     'DateTime::Format::Flexible',
     'DateTime::Format::Flexible(de)',
     'DateTime::Format::Flexible(es)',
@@ -59,8 +59,8 @@ my @parse_date_modules = (
 );
 
 my @parse_duration_modules = (
-    'DateTime::Format::Alami::EN',
-    'DateTime::Format::Alami::ID',
+    #'DateTime::Format::Alami::EN',
+    #'DateTime::Format::Alami::ID',
     'DateTime::Format::Natural',
     'Time::Duration::Parse',
 );
@@ -85,6 +85,8 @@ $SPEC{parse_date} = {
     ],
 };
 sub parse_date {
+    require DateTime::Format::ISO8601::Format;
+
     my %args = @_;
 
     my %mods; # val = 1 if installed
@@ -151,6 +153,8 @@ sub parse_date {
                     $rec->{is_parseable} = 1;
                     $rec->{as_epoch} = $res->{epoch};
                     $rec->{as_datetime_obj} = "$res->{DateTime}";
+                    $rec->{as_datetime_obj_tz_local} = DateTime::Format::ISO8601::Format->new->format_datetime($res->{DateTime}->set_time_zone("local"));
+                    $rec->{as_datetime_obj_tz_utc}   = DateTime::Format::ISO8601::Format->new->format_datetime($res->{DateTime}->set_time_zone("UTC"));
                     $rec->{pattern} = $res->{pattern};
                 }
             } elsif ($mod =~ /^DateTime::Format::Flexible/) {
@@ -166,6 +170,8 @@ sub parse_date {
                     $rec->{is_parseable} = 1;
                     $rec->{as_epoch} = $dt->epoch;
                     $rec->{as_datetime_obj} = "$dt";
+                    $rec->{as_datetime_obj_tz_local} = DateTime::Format::ISO8601::Format->new->format_datetime($dt->set_time_zone("local"));
+                    $rec->{as_datetime_obj_tz_utc}   = DateTime::Format::ISO8601::Format->new->format_datetime($dt->set_time_zone("UTC"));
                 } else {
                     $err =~ s/\n/ /g;
                     $rec->{is_parseable} = 0;
@@ -177,6 +183,8 @@ sub parse_date {
                     $rec->{is_parseable} = 1;
                     $rec->{as_epoch} = $dt->epoch;
                     $rec->{as_datetime_obj} = "$dt";
+                    $rec->{as_datetime_obj_tz_local} = DateTime::Format::ISO8601::Format->new->format_datetime($dt->set_time_zone("local"));
+                    $rec->{as_datetime_obj_tz_utc}   = DateTime::Format::ISO8601::Format->new->format_datetime($dt->set_time_zone("UTC"));
                 } else {
                     $rec->{is_parseable} = 0;
                     $rec->{error_msg} = $parser->error;
@@ -186,7 +194,10 @@ sub parse_date {
                 if (defined $time) {
                     $rec->{is_parseable} = 1;
                     $rec->{as_epoch} = $time;
-                    $rec->{as_datetime_obj} = do { my $dt = DateTime->from_epoch(epoch => $time); "$dt" };
+                    my $dt = DateTime->from_epoch(epoch => $time);
+                    $rec->{as_datetime_obj} = "$dt";
+                    $rec->{as_datetime_obj_tz_local} = DateTime::Format::ISO8601::Format->new->format_datetime($dt->set_time_zone("local"));
+                    $rec->{as_datetime_obj_tz_utc}   = DateTime::Format::ISO8601::Format->new->format_datetime($dt->set_time_zone("UTC"));
                 } else {
                     $rec->{is_parseable} = 0;
                 }
@@ -196,7 +207,7 @@ sub parse_date {
         } # for dates
     } # for mods
 
-    [200, "OK", \@res, {'table.fields'=>[qw/module original is_parseable as_epoch as_datetime_obj error_msg/]}];
+    [200, "OK", \@res, {'table.fields'=>[qw/module original is_parseable as_epoch as_datetime_obj as_datetime_obj_tz_local as_datetime_obj_tz_utc error_msg/]}];
 }
 
 $SPEC{parse_date_using_df_flexible} = {
@@ -797,5 +808,7 @@ date/time:
 =head1 append:SEE ALSO
 
 L<App::datecalc>
+
+L<App::TimeZoneUtils>
 
 =cut
