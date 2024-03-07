@@ -579,7 +579,7 @@ sub strftime {
     my $format = $args{format};
     my $date   = $args{date} // DateTime->now;
 
-    POSIX::strftime($format, gmtime($date->epoch));
+    POSIX::strftime($format, localtime($date->epoch));
 }
 
 $SPEC{strftimeq} = {
