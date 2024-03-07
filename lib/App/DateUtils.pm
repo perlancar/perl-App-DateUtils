@@ -624,7 +624,7 @@ sub strftimeq {
     my $format = $args{format};
     my $date   = $args{date} // DateTime->now;
 
-    Date::strftimeq::strftimeq($format, gmtime($date->epoch));
+    Date::strftimeq::strftimeq($format, localtime($date->epoch));
 }
 
 $SPEC{durconv} = {
